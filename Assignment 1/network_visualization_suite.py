@@ -26,6 +26,7 @@ import os
 from collections import defaultdict
 import seaborn as sns
 from matplotlib.patches import Patch
+from collections import Counter, defaultdict
 import warnings
 warnings.filterwarnings('ignore')
 
@@ -88,7 +89,7 @@ class NetworkVisualizationSuite:
         print("  - Generating Watts-Strogatz graph...")
         k = round(2 * target_edges / n)  # Average degree
         k = k if k % 2 == 0 else k + 1  # Ensure even for WS
-        ws_graph = nx.watts_strogatz_graph(n, k, 0.3, seed=42)
+        ws_graph = nx.watts_strogatz_graph(n, k, 0.1, seed=42) #p 0.1
         self.networks['Watts-Strogatz'] = ws_graph
         
         # Barabási-Albert (scale-free)
@@ -130,10 +131,10 @@ class NetworkVisualizationSuite:
             
             if largest_cc.number_of_nodes() > 1:
                 stats['avg_path_length'] = nx.average_shortest_path_length(largest_cc)
-                #stats['diameter'] = nx.diameter(largest_cc)
+                stats['diameter'] = nx.diameter(largest_cc)
             else:
                 stats['avg_path_length'] = 0
-                #stats['diameter'] = 0
+                stats['diameter'] = 0
             
             # Clustering
             stats['avg_clustering'] = nx.average_clustering(G)
@@ -172,13 +173,27 @@ class NetworkVisualizationSuite:
         ax.grid(True, alpha=0.3)
         
         # 2. Degree Distribution
+        #ax = axes[0, 1]
+        #for i, (name, G) in enumerate(self.networks.items()):
+        #    degrees = [d for n, d in G.degree()]
+        #    ax.hist(degrees, bins=30, alpha=0.6, label=name, color=colors[i], density=True)
+        #ax.set_xlabel('Degree')
+        #ax.set_ylabel('Density')
+        #ax.set_title('Degree Distribution')
+        #ax.legend()
+        #ax.grid(True, alpha=0.3)
+
+        # 2. Degree Distribution (log-log) — adapted from Facebook vs ER script, panel 2
         ax = axes[0, 1]
         for i, (name, G) in enumerate(self.networks.items()):
-            degrees = [d for n, d in G.degree()]
-            ax.hist(degrees, bins=30, alpha=0.6, label=name, color=colors[i], density=True)
-        ax.set_xlabel('Degree')
-        ax.set_ylabel('Density')
-        ax.set_title('Degree Distribution')
+            degrees = [d for _, d in G.degree()]
+            degree_counts = Counter(degrees)                      # from FB script
+            ks = sorted(degree_counts.keys())                     # from FB script
+            pk = [degree_counts[k] / G.number_of_nodes() for k in ks]  # normalize to P(k)
+            ax.loglog(ks, pk, 'o-', alpha=0.7, markersize=3, color=colors[i], label=name)
+        ax.set_xlabel('Degree (log scale)')
+        ax.set_ylabel('P(k) (log scale)')
+        ax.set_title('Degree Distribution (Log-Log)')
         ax.legend()
         ax.grid(True, alpha=0.3)
         
@@ -337,15 +352,16 @@ class NetworkVisualizationSuite:
         print("="*80)
         
         # Create summary table
-        headers = ['Network', 'Nodes', 'Edges', 'Avg Degree', 'Clustering', 'Path Length', 'Assortativity', 'Connected']
-        print(f"{'Network':<15} {'Nodes':<8} {'Edges':<8} {'Avg Degree':<12} {'Clustering':<12} {'Path Length':<12} {'Assortativity':<14} {'Connected':<10}")
+        headers = ['Network', 'Nodes', 'Edges', 'Avg Degree', 'Clustering', 'Path Length', 'Assortativity', 'Connected', 'Diameter']
+        print(f"{'Network':<15} {'Nodes':<8} {'Edges':<8} {'Avg Degree':<12} {'Clustering':<12} {'Path Length':<12} {'Assortativity':<14} {'Connected':<10} {'Diameter':<10}")
         print("-" * 85)
         
         for name, stats in self.network_stats.items():
             connected_str = "Yes" if stats['is_connected'] else f"No ({stats['num_components']} comp.)"
+            diameter = stats.get('diameter', '-')
             print(f"{name:<15} {stats['nodes']:<8} {stats['edges']:<8} "
                   f"{stats['avg_degree']:<12.2f} {stats['avg_clustering']:<12.4f} "
-                  f"{stats['avg_path_length']:<12.2f} {stats['assortativity']:<14.4f} {connected_str:<10}")
+                  f"{stats['avg_path_length']:<12.2f} {stats['assortativity']:<14.4f} {connected_str:<10} {diameter:<10}")
         
         print("\n" + "="*80)
         print("KEY INSIGHTS:")
