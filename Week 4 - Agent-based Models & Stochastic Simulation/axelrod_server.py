@@ -14,6 +14,7 @@ try:
 except Exception:
     from axelrod_model import AxelrodModel, CultureAgent  # fallback for direct script execution
 
+#this code draws visualizations for the simulation of the axelrod model
 
 def _color_from_agent(agent: CultureAgent) -> str:
     # Encode the culture vector as a base-q integer to produce a stable hue.
@@ -29,6 +30,7 @@ def _color_from_agent(agent: CultureAgent) -> str:
 
 
 def agent_portrayal(agent: CultureAgent) -> Dict:
+    """defines lay-out of the agents, so 1x1 square with color"""
     color = _color_from_agent(agent)
     return {
         "Shape": "rect",
@@ -51,7 +53,7 @@ def make_server():
         data_collector_name="datacollector",
     )
 
-    model_params = {
+    model_params = {        #sliders in the web visualization
         "width": Slider("Grid width", 20, 5, 50, 1),
         "height": Slider("Grid height", 20, 5, 50, 1),
         "occupancy": Slider("Occupancy fraction", 1.0, 0.05, 1.0, 0.05),

@@ -6,6 +6,7 @@ from mesa.space import SingleGrid
 from mesa.time import RandomActivation
 from mesa.datacollection import DataCollector
 
+#this code calculates the simulation of the axelrod model
 
 class CultureAgent(Agent):
     def __init__(self, unique_id: int, model: Model, features: List[int], q: int):
@@ -23,17 +24,17 @@ class CultureAgent(Agent):
             return False
         # Compute similarities and filter to active neighbors (0 < overlap < 1)
         sims = [(n, self.similarity(n)) for n in neighbours]
-        active = [(n, s) for (n, s) in sims if 0.0 < s < 1.0]
+        active = [(n, s) for (n, s) in sims if 0.0 < s < 1.0] #interaction only possible for 0 < similarity < 1
         if not active:
             return False
         # Select a neighbor with probability proportional to overlap
         neighs = [n for (n, s) in active]
         weights = [s for (n, s) in active]
-        neighbour = random.choices(neighs, weights=weights, k=1)[0]
+        neighbour = random.choices(neighs, weights=weights, k=1)[0] #the more overlap, the higher probability of interaction
         # Perform one interaction deterministically: copy one differing feature
         diffs = [i for i, (a, b) in enumerate(zip(self.features, neighbour.features)) if a != b]
         if diffs:
-            i = random.choice(diffs)
+            i = random.choice(diffs) #a random difference that will be replaced with neighbours feature
             self.features[i] = neighbour.features[i]
             return True
         return False
@@ -61,7 +62,7 @@ class AxelrodModel(Model):
         random.shuffle(all_positions)
         for i in range(N):
             x, y = all_positions[i]
-            feats = [random.randrange(q) for _ in range(F)]
+            feats = [random.randrange(q) for _ in range(F)] #assigning random culture [q1,q2,...qf]
             a = CultureAgent(i, self, feats, q)
             self.grid.place_agent(a, (x, y))
             self.schedule.add(a)
