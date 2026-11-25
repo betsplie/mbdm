@@ -7,7 +7,6 @@ from model import Config
 from behaviours import RULES, run_scenario
 from metrics import summarize
 
-
 def run_all(cfg):
     rows = []
     for scenario in RULES:
